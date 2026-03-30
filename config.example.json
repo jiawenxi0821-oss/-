@@ -1,0 +1,34 @@
+{
+  "github_pages": {
+    "username": "your-github-username",
+    "repository": "your-repository-name",
+    "page_path": "/about.html",
+    "custom_domain": ""
+  },
+  "qrcode_default": {
+    "size": 10,
+    "border": 2,
+    "fill_color": "black",
+    "back_color": "white",
+    "output_path": "output/about_us_qrcode.png"
+  },
+  "batch_profiles": [
+    {
+      "name": "poster",
+      "size": 14,
+      "border": 3,
+      "fill_color": "#00f3ff",
+      "back_color": "#041129",
+      "output_path": "output/about_us_poster_qr.png"
+    },
+    {
+      "name": "business_card",
+      "size": 8,
+      "border": 2,
+      "fill_color": "black",
+      "back_color": "white",
+      "output_path": "output/about_us_card_qr.png"
+    }
+  ]
+}
+
