@@ -28,7 +28,24 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp -R "ui copy"/. _site/
+          if [ ! -f "_site/index.html" ]; then
+            cat > "_site/index.html" <<'EOF'
+          <!doctype html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Redirecting...</title>
+            <meta http-equiv="refresh" content="0; url=./about.html" />
+          </head>
+          <body>
+            <p>Redirecting to <a href="./about.html">about.html</a> ...</p>
+          </body>
+          </html>
+          EOF
+          fi
           test -f "_site/about.html"
+          test -f "_site/index.html"
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
