@@ -24,6 +24,16 @@ def _emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _resolve_logo_path(logo_arg: str = "") -> str | None:
+    explicit = str(logo_arg).strip()
+    if explicit:
+        return explicit
+    default_logo = Path("ui copy/logo.png")
+    if default_logo.exists():
+        return str(default_logo)
+    return None
+
+
 def _is_full_page_url(url: str, page_path: str) -> bool:
     normalized_path = normalize_page_path(page_path)
     return url.rstrip("/").endswith(normalized_path)
@@ -32,6 +42,7 @@ def _is_full_page_url(url: str, page_path: str) -> bool:
 def cmd_generate(args: argparse.Namespace) -> int:
     target = str(args.url).strip()
     page_path = normalize_page_path(args.page_path)
+    logo_path = _resolve_logo_path(args.logo)
 
     if _is_full_page_url(target, page_path=page_path):
         full_url = target
@@ -42,6 +53,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
             border=args.border,
             fill_color=args.fill_color,
             back_color=args.back_color,
+            logo_path=logo_path,
+            logo_scale=args.logo_scale,
         )
     else:
         output = generate_about_us_qrcode(
@@ -52,6 +65,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
             fill_color=args.fill_color,
             back_color=args.back_color,
             page_path=page_path,
+            logo_path=logo_path,
+            logo_scale=args.logo_scale,
         )
         full_url = build_about_page_url(target, page_path=page_path)
 
@@ -61,6 +76,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
             "mode": "generate",
             "full_url": full_url,
             "output_path": str(Path(output).resolve()),
+            "logo_path": str(Path(logo_path).resolve()) if logo_path else "",
         }
     )
     return 0
@@ -70,6 +86,7 @@ def cmd_from_config(args: argparse.Namespace) -> int:
     runtime = parse_runtime_config(args.config)
     style = runtime.default_style
     output_path = args.output or style.output_path
+    logo_path = _resolve_logo_path(args.logo)
     generated = generate_about_us_qrcode(
         base_url=runtime.base_url,
         output_path=output_path,
@@ -78,6 +95,8 @@ def cmd_from_config(args: argparse.Namespace) -> int:
         fill_color=style.fill_color,
         back_color=style.back_color,
         page_path=runtime.page_path,
+        logo_path=logo_path,
+        logo_scale=args.logo_scale,
     )
     _emit(
         {
@@ -86,6 +105,7 @@ def cmd_from_config(args: argparse.Namespace) -> int:
             "config_path": str(runtime.config_path.resolve()),
             "full_url": build_about_page_url(runtime.base_url, runtime.page_path),
             "output_path": str(Path(generated).resolve()),
+            "logo_path": str(Path(logo_path).resolve()) if logo_path else "",
         }
     )
     return 0
@@ -151,11 +171,25 @@ def build_parser() -> argparse.ArgumentParser:
     p_generate.add_argument("--fill-color", default="black", help="Foreground color.")
     p_generate.add_argument("--back-color", default="white", help="Background color.")
     p_generate.add_argument("--page-path", default=DEFAULT_PAGE_PATH, help="Page path (default /about.html).")
+    p_generate.add_argument("--logo", default="", help="Center logo image path (PNG/JPG).")
+    p_generate.add_argument(
+        "--logo-scale",
+        type=float,
+        default=0.2,
+        help="Center logo size ratio relative to QR width [0.10-0.35].",
+    )
     p_generate.set_defaults(func=cmd_generate)
 
     p_cfg = sub.add_parser("from-config", help="Generate a single QR image from config.json.")
     p_cfg.add_argument("--config", default="config.json", help="Config file path.")
     p_cfg.add_argument("--output", default="", help="Optional output override.")
+    p_cfg.add_argument("--logo", default="", help="Center logo image path (PNG/JPG).")
+    p_cfg.add_argument(
+        "--logo-scale",
+        type=float,
+        default=0.2,
+        help="Center logo size ratio relative to QR width [0.10-0.35].",
+    )
     p_cfg.set_defaults(func=cmd_from_config)
 
     p_batch = sub.add_parser("batch", help="Generate multiple QR images from config batch_profiles.")

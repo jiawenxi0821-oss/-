@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from batch_generate import generate_batch_qrcodes
+from generate_qrcode import generate_qrcode_for_url
 from qrcode_config import ConfigError, parse_runtime_config
 from verify_deployment import verify_qrcode, verify_deployment
 
@@ -95,3 +96,25 @@ def test_verify_deployment_aggregates(monkeypatch):
     assert result["ok"] is True
     assert result["url_check"]["status_code"] == 200
 
+
+def test_generate_qrcode_with_center_logo(tmp_path: Path):
+    from PIL import Image
+
+    logo_path = tmp_path / "logo.png"
+    qr_path = tmp_path / "qr_with_logo.png"
+
+    # Create a strong-color logo so center pixel becomes non-white after overlay.
+    Image.new("RGBA", (120, 120), (255, 0, 0, 255)).save(logo_path)
+
+    generated = generate_qrcode_for_url(
+        full_url="https://example.com/about.html",
+        output_path=str(qr_path),
+        logo_path=str(logo_path),
+        logo_scale=0.2,
+        quiet=True,
+    )
+
+    assert generated.exists()
+    img = Image.open(generated).convert("RGBA")
+    center = img.getpixel((img.size[0] // 2, img.size[1] // 2))
+    assert center[:3] != (255, 255, 255)
